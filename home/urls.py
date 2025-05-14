@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import index,get_data
-from.views import BookView,UserApi
+from.views import BookView,UserApi,RegistrationView,LoginView
 
 
 urlpatterns = [
@@ -12,6 +12,12 @@ urlpatterns = [
     ####
     path('api/books/',BookView.as_view(),name="books"),
     path('api/user/',UserApi.as_view(),name="create-user"),
+    
+    
+    ####
+    path('api/register/',RegistrationView.as_view(),name='register'),
+    path('api/login/',LoginView.as_view(),name='login'),
+    
     
     
 ]
