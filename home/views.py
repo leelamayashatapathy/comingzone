@@ -5,9 +5,91 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from.models import Student,Book
 
+from django.contrib.auth.models import User
+from django.contrib.auth import authenticate
+from rest_framework import status
+from rest_framework.authtoken.models import Token
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.authentication import TokenAuthentication
 
 
-from .serializers import StudentSerializer,BookSerializer,UserSerializer,NewBookSerializer
+from .serializers import StudentSerializer,BookSerializer,UserSerializer,NewBookSerializer,CrteateBookSerializer,RegisterSerializer,LoginSerializer
+
+
+# from rest_framework.mixins import ListModelMixin,CreateModelMixin
+# from rest_framework.generics import GenericAPIView
+
+
+
+class RegistrationView(APIView):
+    def post(self,request):
+        data = request.data
+        serializer = RegisterSerializer(data=data)
+        if not serializer.is_valid():
+            return Response({
+                "msg":"User not created",
+                "error": serializer.errors
+            })
+        serializer.save()
+        response = {
+        "status": True,
+        "message": "User Created",
+        "student" : serializer.data
+        }
+        return Response(response)
+    
+    
+class LoginView(APIView):
+    def post(self, request):
+        serializer = LoginSerializer(data=request.data)
+        if serializer.is_valid():
+            username = serializer.validated_data['username']
+            password = serializer.validated_data['password']
+            user = authenticate(username=username, password=password)
+
+            if user:
+                # Optionally: generate token here (e.g., JWT or DRF token)
+                token, created = Token.objects.get_or_create(user=user)
+                user_data = LoginSerializer(user).data
+                
+                return Response({
+                    "status": True,
+                    "message": "User logged in successfully",
+                    "data": user_data,
+                    "token": token.key
+                }, status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    "status": False,
+                    "message": "Invalid credentials"
+                }, status=status.HTTP_401_UNAUTHORIZED)
+
+        return Response({
+            "status": False,
+            "message": "Validation failed",
+            "errors": serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
+            
+                    
+            
+            
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 @api_view(['get'])
 def index(request):
@@ -137,6 +219,8 @@ def get_data(request, id = None):
         
         
 class BookView(APIView):
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = [IsAuthenticated]
     
     def get(self,request):
         query_set = Book.objects.all()
@@ -147,7 +231,9 @@ class BookView(APIView):
         })
     def post(self,request):
         data = request.data
-        book = BookSerializer(data=data)
+        # book = BookSerializer(data=data)
+        book = NewBookSerializer(data=data)
+        
         if not book.is_valid():
             return Response({
                 "status": True,

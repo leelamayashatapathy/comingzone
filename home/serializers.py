@@ -3,6 +3,48 @@ from rest_framework import serializers
 from . models import Student,Book,Author,Publisher
 from datetime import datetime,date
 from.validator import no_digit
+from django.contrib.auth.models import User
+
+class RegisterSerializer(serializers.Serializer):
+    username = serializers.CharField(max_length=255, validators = [no_digit])
+    password = serializers.CharField(max_length=255)
+    first_name = serializers.CharField(max_length=255)
+    last_name = serializers.CharField(max_length = 255)
+
+
+    def validate_useername(self, username):
+        if User.objects.filter(username=username).exists():
+            raise serializers.ValidationError("Username already Exists")
+        return username
+    
+    def create(self, validated_data):
+        username=validated_data['username']
+        password=validated_data['password']
+        first_name=validated_data['first_name']
+        last_name=validated_data['last_name']
+        
+        user = User.objects.create_user(username=username,password=password,first_name=first_name,last_name=last_name)
+        
+        return user
+    
+    
+class LoginSerializer(serializers.Serializer):
+    username = serializers.CharField(max_length=255, validators = [no_digit])
+    password = serializers.CharField(max_length=255)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class StudentSerializer(serializers.ModelSerializer):
@@ -114,3 +156,11 @@ class NewBookSerializer(serializers.ModelSerializer):
     class Meta:
         model = Book
         fields = "__all__"
+        
+        
+class CrteateBookSerializer(serializers.ModelSerializer):
+    author = serializers.PrimaryKeyRelatedField(queryset = Author.objects.all() )
+    publishers = serializers.PrimaryKeyRelatedField(queryset = Publisher.objects.all(),many=True)
+    class Meta:
+        model = Book
+        filds = "__all__"
